@@ -5,7 +5,7 @@
 #include "../include/pcb.h"
 
 PCB::PCB()
-    : _state(Unallocated), _parent(-1), _priority(Low), _children({}), _resources({}){
+    : _state(Unallocated), _parent(-1), _priority(Low), children({}), resources({}){
 }
 
 void PCB::setParent(PID pid) {
@@ -33,13 +33,13 @@ void PCB::ready() {
 }
 
 void PCB::addChild(PID pid) {
-    _children.push_back(pid);
+    children.push_back(pid);
 }
 
 RC PCB::deleteChild(PID pid) {
-    auto it = std::find(_children.begin(), _children.end(), pid);
-    if (it != _children.end()) {
-        _children.erase(it);
+    auto it = std::find(children.begin(), children.end(), pid);
+    if (it != children.end()) {
+        children.erase(it);
     }
     else {
         return -1; // return -1 for error code if the child does not exist
@@ -52,9 +52,9 @@ void PCB::printPCB() {
     std::cout << "Priority: " << _priority << std::endl;
     std::cout << "Parent PID: " << _parent << std::endl;
     std::cout << "Children PIDs: ";
-    printList(_children);
+    printList(children);
     std::cout << "Resources RIDs: ";
-    printPairList(_resources);
+    printPairList(resources);
     std::cout << std::endl;
 }
 
@@ -64,13 +64,13 @@ bool PCB::isAllocated() {
 
 void PCB::insertResource(RID rid, unsigned int units) {
     RUP rup(rid, units);
-    _resources.push_back(rup);
+    resources.push_back(rup);
 }
 
 void PCB::removeResource(RID rid) {
-    for (auto it = _resources.begin(); it != _resources.end(); ++it) {
+    for (auto it = resources.begin(); it != resources.end(); ++it) {
         if (it->first == rid) {
-            _resources.erase(it);
+            resources.erase(it);
             return;
         }
     }
@@ -78,7 +78,7 @@ void PCB::removeResource(RID rid) {
 }
 
 bool PCB::hasResource(RID rid) {
-    for (auto it = _resources.begin(); it != _resources.end(); ++it) {
+    for (auto it = resources.begin(); it != resources.end(); ++it) {
         if (it->first == rid) {
             return true;
         }

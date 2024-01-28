@@ -19,6 +19,7 @@ public:
     PID popFromRL();
     PID peekTop();
     void printRL();
+    void moveProcessToEnd(PID pid);
 private:
     std::list<PID> _highPriorityRL{};
     std::list<PID> _midPriorityRL{};

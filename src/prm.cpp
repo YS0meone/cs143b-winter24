@@ -60,15 +60,15 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
             init();
         }
     }
-//    else if(function == "de") {
-//        if (args.size() != 2) {
-//            std::cerr << "de command used with wrong number of arguments!" << std::endl;
-//        }
-//        else {
-//            PID pid = std::stoi(args[1]);
-//            returnCode = destroy(pid);
-//        }
-//    }
+    else if(function == "de") {
+        if (args.size() != 2) {
+            std::cerr << "de command used with wrong number of arguments!" << std::endl;
+        }
+        else {
+            PID pid = std::stoi(args[1]);
+            returnCode = destroy(pid);
+        }
+    }
     else if(function == "rq") {
         if (args.size() != 3) {
             std::cerr << "rq command used with wrong number o arguments!" << std::endl;
@@ -86,17 +86,17 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
         else {
             RID rid = std::stoi(args[1]);
             unsigned units = std::stoi(args[2]);
-            returnCode = release(rid, units);
+            returnCode = release(runningPID, rid, units);
         }
     }
-//    else if(function == "to") {
-//        if (args.size() != 1) {
-//            std::cerr << "to command used with wrong number o arguments!" << std::endl;
-//        }
-//        else {
-//            timeout();
-//        }
-//    }
+    else if(function == "to") {
+        if (args.size() != 1) {
+            std::cerr << "to command used with wrong number o arguments!" << std::endl;
+        }
+        else {
+            timeout();
+        }
+    }
     else{
         std::cerr << "Unknown command!" << std::endl;
 
@@ -198,8 +198,8 @@ RC ProcessResourceManager::request(RID rid, unsigned int units) {
     return 0;
 }
 
-RC ProcessResourceManager::release(RID rid, unsigned int units) {
-    PCB& pcb = pcbs[runningPID];
+RC ProcessResourceManager::release(PID pid, RID rid, unsigned int units) {
+    PCB& pcb = pcbs[pid];
     RCB& rcb = rcbs[rid];
     if (!pcb.hasResource(rid)) {
         std::cerr << "Error: releasing an resource that does not belong to the process!" << std::endl;
@@ -230,6 +230,31 @@ RC ProcessResourceManager::release(RID rid, unsigned int units) {
     scheduler();
     rcb.printRCB();
     return 0;
+}
+
+RC ProcessResourceManager::destroy(PID pid) {
+    PCB& pcb = pcbs[pid];
+    PCB& parent = pcbs[pcb.getParent()];
+    for (auto& childPID: pcb.children) {
+        destroy(childPID);
+    }
+    parent.deleteChild(pid);
+    rl.removeFromRL(pid, pcb.getPriority());
+    RID rid;
+    unsigned units;
+    for (auto& pair: pcb.resources) {
+        rid = pair.first;
+        units = pair.second;
+        release(pid, rid, units);
+    }
+    pcbs[pid] = PCB();
+    pcbNum -= 1;
+    return 0;
+}
+
+void ProcessResourceManager::timeout() {
+    rl.moveProcessToEnd(runningPID);
+    scheduler();
 }
 
 ProcessResourceManager::~ProcessResourceManager() = default;

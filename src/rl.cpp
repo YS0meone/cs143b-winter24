@@ -99,3 +99,21 @@ PID ReadyList::peekTop() {
     }
 }
 
+void ReadyList::moveProcessToEnd(PID pid) {
+    if (pid != _highPriorityRL.front() && pid != _midPriorityRL.front() && pid != _lowPriorityRL.front()) {
+        std::cerr << "Timeour error, the process is not at the front!" << std::endl;
+    }
+    if (pid == _highPriorityRL.front()) {
+        _highPriorityRL.pop_front();
+        _highPriorityRL.push_back(pid);
+    }
+    else if (pid == _midPriorityRL.front()) {
+        _midPriorityRL.pop_front();
+        _midPriorityRL.push_back(pid);
+    }
+    else {
+        _lowPriorityRL.pop_front();
+        _lowPriorityRL.push_back(pid);
+    }
+}
+

@@ -21,6 +21,8 @@ enum PCBState{
 class PCB {
 public:
     PCB(); // The os process initialization
+    std::list<PID> children;
+    std::list<RUP> resources;
     void setParent(PID pid);
     PID getParent();
     void setPriority(Priority priority);
@@ -37,8 +39,6 @@ public:
 private:
     PCBState _state;
     PID _parent;
-    std::list<PID> _children;
-    std::list<RUP> _resources;
     Priority _priority;
 };
 

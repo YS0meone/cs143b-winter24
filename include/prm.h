@@ -39,11 +39,10 @@ private:
     void init();
     int getUnallocatedPCB();
     RC create(Priority priority);
-//    RC destroy(PID pid);
+    RC destroy(PID pid);
     RC request(RID rid, unsigned units);
-    RC release(RID rid, unsigned units);
-//    void timeout();
-//    void scheduler();
+    RC release(PID pid, RID rid, unsigned int units);
+    void timeout();
     void executeCommand(const std::vector<std::string>& args);
 
 };
