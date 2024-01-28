@@ -17,10 +17,11 @@ public:
     RCB();
     void addRequest(PID pid, unsigned int units);
     RC removeFromWaitList(PID pid);
-    PID getNextWaitingProcess();
+    PRP getNextRequest();
     unsigned getInventory();
     bool isWaitListEmpty();
     void allocateUnits(unsigned int units);
+    void returnUnits(unsigned int units);
     bool canHandle(unsigned int units);
     void setInventory(unsigned int units);
     void initializeState();

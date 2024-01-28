@@ -79,16 +79,16 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
             returnCode = request(rid, units);
         }
     }
-//    else if(function == "rl") {
-//        if (args.size() != 3) {
-//            std::cerr << "rl command used with wrong number o arguments!" << std::endl;
-//        }
-//        else {
-//            RID rid = std::stoi(args[1]);
-//            unsigned units = std::stoi(args[2]);
-//            returnCode = release(rid, units);
-//        }
-//    }
+    else if(function == "rl") {
+        if (args.size() != 3) {
+            std::cerr << "rl command used with wrong number o arguments!" << std::endl;
+        }
+        else {
+            RID rid = std::stoi(args[1]);
+            unsigned units = std::stoi(args[2]);
+            returnCode = release(rid, units);
+        }
+    }
 //    else if(function == "to") {
 //        if (args.size() != 1) {
 //            std::cerr << "to command used with wrong number o arguments!" << std::endl;
@@ -183,16 +183,51 @@ RC ProcessResourceManager::request(RID rid, unsigned int units) {
     if (rcb.canHandle(units)) {
         rcb.allocateUnits(units);
         pcb.insertResource(rid, units);
+        std::cout << units << " of resource " << rid << " allocated" << std::endl;
     }
     else {
         pcb.block();
         rl.removeFromRL(runningPID, pcb.getPriority());
-        rl.printRL();
+//        rl.printRL();
         rcb.addRequest(runningPID, units);
         scheduler();
     }
-    pcb = pcbs[runningPID];
+//    pcb = pcbs[runningPID];
+//    pcb.printPCB();
+//    rcb.printRCB();
+    return 0;
+}
+
+RC ProcessResourceManager::release(RID rid, unsigned int units) {
+    PCB& pcb = pcbs[runningPID];
+    RCB& rcb = rcbs[rid];
+    if (!pcb.hasResource(rid)) {
+        std::cerr << "Error: releasing an resource that does not belong to the process!" << std::endl;
+        return -1;
+    }
+    pcb.removeResource(rid);
+    rcb.returnUnits(units);
     pcb.printPCB();
+    rcb.printRCB();
+    rl.printRL();
+    while (!rcb.isWaitListEmpty() && rcb.canHandle(1)) {
+        PRP prp = rcb.getNextRequest();
+        PID waitingPID = prp.first;
+        unsigned requestedUnits = prp.second;
+        PCB& waitingPCB = pcbs[waitingPID];
+        if (rcb.canHandle(requestedUnits)) {
+            rcb.allocateUnits(requestedUnits);
+            waitingPCB.insertResource(rid, requestedUnits);
+            waitingPCB.ready();
+            rcb.removeFromWaitList(waitingPID);
+            rl.addToRL(waitingPCB.getPriority(), waitingPID);
+            rl.printRL();
+        }
+        else {
+            break;
+        }
+    }
+    scheduler();
     rcb.printRCB();
     return 0;
 }

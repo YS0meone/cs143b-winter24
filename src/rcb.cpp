@@ -25,8 +25,8 @@ RC RCB::removeFromWaitList(PID pid) {
 }
 
 
-PID RCB::getNextWaitingProcess() {
-    return _waitList.front().first;
+PRP RCB::getNextRequest() {
+    return _waitList.front();
 }
 
 bool RCB::isWaitListEmpty() {
@@ -60,4 +60,8 @@ void RCB::allocateUnits(unsigned int units) {
 
 unsigned RCB::getInventory() {
     return _inventory;
+}
+
+void RCB::returnUnits(unsigned int units) {
+    _state += units;
 }

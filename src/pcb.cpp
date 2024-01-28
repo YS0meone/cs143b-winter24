@@ -67,6 +67,25 @@ void PCB::insertResource(RID rid, unsigned int units) {
     _resources.push_back(rup);
 }
 
+void PCB::removeResource(RID rid) {
+    for (auto it = _resources.begin(); it != _resources.end(); ++it) {
+        if (it->first == rid) {
+            _resources.erase(it);
+            return;
+        }
+    }
+    std::cerr << "Error: removing a resource that does not belong to the process!" << std::endl;
+}
+
+bool PCB::hasResource(RID rid) {
+    for (auto it = _resources.begin(); it != _resources.end(); ++it) {
+        if (it->first == rid) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 
 
