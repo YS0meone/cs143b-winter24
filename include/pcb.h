@@ -27,14 +27,16 @@ public:
     Priority getPriority();
     void ready();
     void block();
+    bool isAllocated();
     void addChild(PID pid);
     RC deleteChild(PID pid);
+    void insertResource(RID rid, unsigned units);
     void printPCB();
 private:
     PCBState _state;
     PID _parent;
     std::list<PID> _children;
-    std::list<RID> _resources;
+    std::list<RUP> _resources;
     Priority _priority;
 };
 

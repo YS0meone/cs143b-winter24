@@ -11,7 +11,7 @@ ProcessResourceManager& ProcessResourceManager::instance() {
 }
 
 ProcessResourceManager::ProcessResourceManager()
-    : pcbNum(0), rl({}), pcbs{}, rcbs{}{
+    : pcbNum(0), rl({}), pcbs{}, rcbs{}, runningPID(-1){
     // initializer should initialize the PRMs and RL and RCBs and calls activateShell to allow for user interaction
     activateShell();
 }
@@ -69,16 +69,16 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
 //            returnCode = destroy(pid);
 //        }
 //    }
-//    else if(function == "rq") {
-//        if (args.size() != 3) {
-//            std::cerr << "rq command used with wrong number o arguments!" << std::endl;
-//        }
-//        else {
-//            RID rid = std::stoi(args[1]);
-//            unsigned units = std::stoi(args[2]);
-//            returnCode = request(rid, units);
-//        }
-//    }
+    else if(function == "rq") {
+        if (args.size() != 3) {
+            std::cerr << "rq command used with wrong number o arguments!" << std::endl;
+        }
+        else {
+            RID rid = std::stoi(args[1]);
+            unsigned units = std::stoi(args[2]);
+            returnCode = request(rid, units);
+        }
+    }
 //    else if(function == "rl") {
 //        if (args.size() != 3) {
 //            std::cerr << "rl command used with wrong number o arguments!" << std::endl;
@@ -98,7 +98,8 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
 //        }
 //    }
     else{
-        std::cerr << "Unknown command!" << std::endl;\
+        std::cerr << "Unknown command!" << std::endl;
+
     }
 }
 
@@ -118,17 +119,18 @@ void ProcessResourceManager::init() {
             rcbs[i].setInventory(i);
             rcbs[i].initializeState();
         }
-        std::cout << "RCB " << i << ": " << std::endl;
-        rcbs[i].printRCB();
+//        std::cout << "RCB " << i << ": " << std::endl;
+//        rcbs[i].printRCB();
     }
     rl = ReadyList();
     pcbs[0].setParent(0);
     pcbs[0].setPriority(Low);
     pcbs[0].ready();
-    pcbs[0].printPCB();
-    pcbNum = 0;
+//    pcbs[0].printPCB();
+    pcbNum = 1;
     rl.addToRL(Low, 0);
-    rl.printRL();
+    scheduler();
+//    rl.printRL();
 }
 
 RC ProcessResourceManager::create(Priority priority) {
@@ -136,10 +138,62 @@ RC ProcessResourceManager::create(Priority priority) {
         std::cerr << "Creating more than " << PCB_COUNTS << " PCBS!" << std::endl;
         return -1;
     }
-    PID pid = pcbNum;
+    auto pid = static_cast<PID>(getUnallocatedPCB());
+    if (pid == -1) {
+        std::cerr << "Error when creating a process: there is no available PCB!" << std::endl;
+        return -1;
+    }
     pcbs[pid].ready();
+    PID parent = runningPID;
+    pcbs[parent].addChild(pid);
+    pcbs[pid].setParent(parent);
+    pcbs[pid].setPriority(priority);
+    rl.addToRL(priority, pid);
+    pcbNum += 1;
+    std::cout << "process " << pid << " created" << std::endl;
+//    pcbs[pid].printPCB();
+//    rl.printRL();
+    scheduler();
+    return 0;
+}
 
-    rl.addToRL(priority, pcbNum);
+PID ProcessResourceManager::getUnallocatedPCB() {
+    for (PID i = 0; i < PCB_COUNTS; ++i) {
+        if (!pcbs[i].isAllocated()) {
+            return i;
+        }
+    }
+    return -1; //
+}
+
+void ProcessResourceManager::scheduler() {
+    PID candidate = rl.peekTop();
+    runningPID = candidate; // even if it returns -1
+    std::cout << "process " << runningPID << " running" << std::endl;
+}
+
+RC ProcessResourceManager::request(RID rid, unsigned int units) {
+    RCB& rcb = rcbs[rid];
+    PCB& pcb = pcbs[runningPID];
+    unsigned maxUnits = rcb.getInventory();
+    if (maxUnits < units) {
+        std::cerr << "Requested more than resource can possible have!" << std::endl;
+        return -1;
+    }
+    if (rcb.canHandle(units)) {
+        rcb.allocateUnits(units);
+        pcb.insertResource(rid, units);
+    }
+    else {
+        pcb.block();
+        rl.removeFromRL(runningPID, pcb.getPriority());
+        rl.printRL();
+        rcb.addRequest(runningPID, units);
+        scheduler();
+    }
+    pcb = pcbs[runningPID];
+    pcb.printPCB();
+    rcb.printRCB();
     return 0;
 }
 

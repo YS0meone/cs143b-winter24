@@ -17,6 +17,14 @@ void printList(const std::list<T>& list) {
     std::cout << std::endl;
 }
 
+template<typename T1, typename T2>
+void printPairList(const std::list<std::pair<T1, T2>> list) {
+    for (const auto& pair: list) {
+        std::cout << "(" << pair.first << ", " << pair.second << ")" << " ";
+    }
+    std::cout << std::endl;
+}
+
 template<class T>
 void printVector(const std::vector<T> &vec) {
     for (const T& ele: vec) {

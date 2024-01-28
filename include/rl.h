@@ -17,6 +17,7 @@ public:
     void addToRL(Priority priority, PID pid);
     RC removeFromRL(PID pid, Priority priority);
     PID popFromRL();
+    PID peekTop();
     void printRL();
 private:
     std::list<PID> _highPriorityRL{};

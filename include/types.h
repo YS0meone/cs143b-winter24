@@ -5,9 +5,12 @@
 #ifndef TYPES_H
 #define TYPES_H
 
-typedef unsigned PID;
-typedef unsigned RID;
+#include <utility>
+typedef int PID;
+typedef int RID;
 typedef int RC; // return code
+typedef std::pair<PID, unsigned> PRP;
+typedef std::pair<RID, unsigned> RUP;
 
 enum Priority{
     Low = 0,

@@ -35,10 +35,11 @@ PID ReadyList::popFromRL() {
     else {
         ret = -1;
     }
+    return ret;
 }
 
 RC ReadyList::removeFromRL(PID pid, Priority priority) {
-    std::list<int>::iterator it;
+    std::list<PID>::iterator it;
     switch (priority) {
         case High:
             it = std::find(_highPriorityRL.begin(), _highPriorityRL.end(), pid);
@@ -74,6 +75,7 @@ RC ReadyList::removeFromRL(PID pid, Priority priority) {
             }
             break;
     }
+    return 0;
 }
 
 void ReadyList::printRL() {
@@ -83,5 +85,17 @@ void ReadyList::printRL() {
     printList(_midPriorityRL);
     std::cout << "Low Priority RL: ";
     printList(_lowPriorityRL);
+}
+
+PID ReadyList::peekTop() {
+    if (!_highPriorityRL.empty()) {
+        return _highPriorityRL.front();
+    }
+    else if (!_midPriorityRL.empty()) {
+        return _midPriorityRL.front();
+    }
+    else {
+        return _lowPriorityRL.front();
+    }
 }
 

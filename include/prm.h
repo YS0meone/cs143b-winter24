@@ -28,15 +28,19 @@ protected:
     ProcessResourceManager& operator=(const ProcessResourceManager& other);
 private:
     unsigned pcbNum;
+    PID runningPID;
     PCB pcbs[PCB_COUNTS];
     RCB rcbs[RCB_COUNTS];
     ReadyList rl;
+
     void activateShell();
     std::vector<std::string> parseCommand(const std::string& command);
+    void scheduler();
     void init();
+    int getUnallocatedPCB();
     RC create(Priority priority);
 //    RC destroy(PID pid);
-//    RC request(RID rid, unsigned units);
+    RC request(RID rid, unsigned units);
 //    RC release(RID rid, unsigned units);
 //    void timeout();
 //    void scheduler();

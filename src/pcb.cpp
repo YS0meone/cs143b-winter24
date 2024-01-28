@@ -54,8 +54,17 @@ void PCB::printPCB() {
     std::cout << "Children PIDs: ";
     printList(_children);
     std::cout << "Resources RIDs: ";
-    printList(_resources);
+    printPairList(_resources);
     std::cout << std::endl;
+}
+
+bool PCB::isAllocated() {
+    return _state != Unallocated;
+}
+
+void PCB::insertResource(RID rid, unsigned int units) {
+    RUP rup(rid, units);
+    _resources.push_back(rup);
 }
 
 
