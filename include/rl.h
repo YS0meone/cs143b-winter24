@@ -5,9 +5,23 @@
 #ifndef PRM_RL_H
 #define PRM_RL_H
 
+#include <list>
+#include "types.h"
+#include <algorithm>
+#include <iostream>
+#include "utils.h"
+
 
 class ReadyList {
-
+public:
+    void addToRL(Priority priority, PID pid);
+    RC removeFromRL(PID pid, Priority priority);
+    PID popFromRL();
+    void printRL();
+private:
+    std::list<PID> _highPriorityRL{};
+    std::list<PID> _midPriorityRL{};
+    std::list<PID> _lowPriorityRL{};
 };
 
 

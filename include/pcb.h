@@ -9,20 +9,13 @@
 #include <algorithm>
 #include <iostream>
 #include "rl.h"
+#include "types.h"
+#include "utils.h"
 
-typedef unsigned PID;
-typedef unsigned RID;
-typedef int RC; // return code
-
-enum State{
+enum PCBState{
     Ready = 0,
-    Blocked
-};
-
-enum Priority{
-    Low = 0,
-    Mid,
-    High
+    Blocked,
+    Unallocated
 };
 
 class PCB {
@@ -36,10 +29,9 @@ public:
     void block();
     void addChild(PID pid);
     RC deleteChild(PID pid);
-    void printChildren();
-
+    void printPCB();
 private:
-    State _state;
+    PCBState _state;
     PID _parent;
     std::list<PID> _children;
     std::list<RID> _resources;

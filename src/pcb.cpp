@@ -5,7 +5,7 @@
 #include "../include/pcb.h"
 
 PCB::PCB()
-    : _state(Ready), _parent(0), _priority(Low), _children({}), _resources({}){
+    : _state(Unallocated), _parent(-1), _priority(Low), _children({}), _resources({}){
 }
 
 void PCB::setParent(PID pid) {
@@ -47,12 +47,17 @@ RC PCB::deleteChild(PID pid) {
     return 0;
 }
 
-void PCB::printChildren() {
-    for (const auto& child: _children) {
-        std::cout << child << " ";
-    }
+void PCB::printPCB() {
+    std::cout << "State: " << _state << std::endl;
+    std::cout << "Priority: " << _priority << std::endl;
+    std::cout << "Parent PID: " << _parent << std::endl;
+    std::cout << "Children PIDs: ";
+    printList(_children);
+    std::cout << "Resources RIDs: ";
+    printList(_resources);
     std::cout << std::endl;
 }
+
 
 
 
