@@ -117,3 +117,40 @@ void ReadyList::moveProcessToEnd(PID pid) {
     }
 }
 
+bool ReadyList::hasPID(PID pid, Priority priority) {
+    std::list<PID>::iterator it;
+    switch (priority) {
+        case High:
+            it = std::find(_highPriorityRL.begin(), _highPriorityRL.end(), pid);
+            if (it != _highPriorityRL.end()) {
+                return true;
+            }
+            else {
+                return false;
+            }
+            break;
+        case Mid:
+            it = std::find(_midPriorityRL.begin(), _midPriorityRL.end(), pid);
+            if (it != _midPriorityRL.end()) {
+                return true;
+            }
+            else {
+                return false;
+            }
+            break;
+        case Low:
+            it = std::find(_lowPriorityRL.begin(), _lowPriorityRL.end(), pid);
+            if (it != _lowPriorityRL.end()) {
+                return true;
+            }
+            else {
+                return false;
+            }
+            break;
+    }
+    std::cerr << "Priority value unknown!" <<std::endl;
+    return false;
+}
+
+
+

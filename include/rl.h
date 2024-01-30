@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <iostream>
 #include "utils.h"
+#include <map>
 
 
 class ReadyList {
@@ -17,6 +18,7 @@ public:
     void addToRL(Priority priority, PID pid);
     RC removeFromRL(PID pid, Priority priority);
     PID popFromRL();
+    bool hasPID(PID pid, Priority priority);
     PID peekTop();
     void printRL();
     void moveProcessToEnd(PID pid);

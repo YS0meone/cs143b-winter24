@@ -47,7 +47,7 @@ RC PCB::deleteChild(PID pid) {
     return 0;
 }
 
-void PCB::printPCB() {
+void PCB::printPCB() const {
     std::cout << "State: " << _state << std::endl;
     std::cout << "Priority: " << _priority << std::endl;
     std::cout << "Parent PID: " << _parent << std::endl;
@@ -68,22 +68,31 @@ void PCB::insertResource(RID rid, unsigned int units) {
 }
 
 void PCB::removeResource(RID rid) {
-    for (auto it = resources.begin(); it != resources.end(); ++it) {
+    for (auto it = resources.begin(); it != resources.end();) {
         if (it->first == rid) {
-            resources.erase(it);
+            it = resources.erase(it);
             return;
+        }
+        else {
+            ++it;
         }
     }
     std::cerr << "Error: removing a resource that does not belong to the process!" << std::endl;
 }
 
-bool PCB::hasResource(RID rid) {
+bool PCB::hasResource(RID rid, unsigned units) {
     for (auto it = resources.begin(); it != resources.end(); ++it) {
         if (it->first == rid) {
-            return true;
+            if (units <= it->second) {
+                return true;
+            }
         }
     }
     return false;
+}
+
+void PCB::unallocate() {
+    _state = Unallocated;
 }
 
 

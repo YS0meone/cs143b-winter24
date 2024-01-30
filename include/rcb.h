@@ -15,14 +15,15 @@ class RCB {
 
 public:
     RCB();
+    std::list<PRP> waitList;
     void addRequest(PID pid, unsigned int units);
     RC removeFromWaitList(PID pid);
     PRP getNextRequest();
-    unsigned getInventory();
+    unsigned getInventory() const;
     bool isWaitListEmpty();
     void allocateUnits(unsigned int units);
     void returnUnits(unsigned int units);
-    bool canHandle(unsigned int units);
+    bool canHandle(unsigned int units) const;
     void setInventory(unsigned int units);
     void initializeState();
     void printRCB();
@@ -30,7 +31,7 @@ public:
 private:
     int _inventory;
     int _state;
-    std::list<PRP> _waitList;
+
 };
 
 

@@ -41,9 +41,11 @@ private:
     RC create(Priority priority);
     RC destroy(PID pid);
     RC request(RID rid, unsigned units);
+    RC release(RID rid, unsigned int units);
     RC release(PID pid, RID rid, unsigned int units);
     void timeout();
     void executeCommand(const std::vector<std::string>& args);
+    void printStat();
 
 };
 

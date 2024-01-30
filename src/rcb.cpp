@@ -5,18 +5,18 @@
 #include "../include/rcb.h"
 
 RCB::RCB()
-    : _inventory(0), _state(0), _waitList({}){
+    : _inventory(0), _state(0), waitList({}){
 }
 
 void RCB::addRequest(PID pid, unsigned int units) {
     PRP newRequest(pid, units);
-    _waitList.push_back(newRequest);
+    waitList.push_back(newRequest);
 }
 
 RC RCB::removeFromWaitList(PID pid) {
-    for (auto it = _waitList.begin(); it != _waitList.end(); ++it) {
+    for (auto it = waitList.begin(); it != waitList.end(); ++it) {
         if (it->first == pid) {
-            _waitList.erase(it);
+            waitList.erase(it);
             return 0;
         }
     }
@@ -26,11 +26,11 @@ RC RCB::removeFromWaitList(PID pid) {
 
 
 PRP RCB::getNextRequest() {
-    return _waitList.front();
+    return waitList.front();
 }
 
 bool RCB::isWaitListEmpty() {
-    return _waitList.empty();
+    return waitList.empty();
 }
 
 void RCB::setInventory(unsigned int units) {
@@ -45,11 +45,11 @@ void RCB::printRCB() {
     std::cout << "Inventory: " << _inventory  << std::endl;
     std::cout << "Units left: " << _state << std::endl;
     std::cout << "Wait List PIDs: ";
-    printPairList(_waitList);
+    printPairList(waitList);
     std::cout << std::endl;
 }
 
-bool RCB::canHandle(unsigned int units) {
+bool RCB::canHandle(unsigned int units) const {
     return _state >= units;
 }
 
@@ -58,7 +58,7 @@ void RCB::allocateUnits(unsigned int units) {
 }
 
 
-unsigned RCB::getInventory() {
+unsigned RCB::getInventory() const {
     return _inventory;
 }
 

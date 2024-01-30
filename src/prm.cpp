@@ -42,10 +42,11 @@ std::vector<std::string> ProcessResourceManager::parseCommand(const std::string 
 
 void ProcessResourceManager::executeCommand(const std::vector<std::string> &args) {
     const std::string& function = args[0];
-    RC returnCode;
+    RC returnCode = 0;
     if (function == "cr") {
         if (args.size() != 2) {
             std::cerr << "cr command used with wrong number of arguments!" << std::endl;
+            returnCode = -1;
         }
         else {
             auto priority = static_cast<Priority>(std::stoi(args[1]));
@@ -55,6 +56,7 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
     else if (function == "in") {
         if (args.size() != 1) {
             std::cerr << "in command used with wrong number of arguments!" << std::endl;
+            returnCode = -1;
         }
         else {
             init();
@@ -63,15 +65,18 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
     else if(function == "de") {
         if (args.size() != 2) {
             std::cerr << "de command used with wrong number of arguments!" << std::endl;
+            returnCode = -1;
         }
         else {
             PID pid = std::stoi(args[1]);
             returnCode = destroy(pid);
+            scheduler();
         }
     }
     else if(function == "rq") {
         if (args.size() != 3) {
-            std::cerr << "rq command used with wrong number o arguments!" << std::endl;
+            std::cerr << "rq command used with wrong number of arguments!" << std::endl;
+            returnCode = -1;
         }
         else {
             RID rid = std::stoi(args[1]);
@@ -81,25 +86,35 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
     }
     else if(function == "rl") {
         if (args.size() != 3) {
-            std::cerr << "rl command used with wrong number o arguments!" << std::endl;
+            std::cerr << "rl command used with wrong number of arguments!" << std::endl;
         }
         else {
             RID rid = std::stoi(args[1]);
             unsigned units = std::stoi(args[2]);
-            returnCode = release(runningPID, rid, units);
+            returnCode = release(rid, units);
         }
     }
     else if(function == "to") {
         if (args.size() != 1) {
-            std::cerr << "to command used with wrong number o arguments!" << std::endl;
+            std::cerr << "to command used with wrong number of arguments!" << std::endl;
         }
         else {
             timeout();
         }
     }
+    else if(function == "pr") {
+        if (args.size() != 1) {
+            std::cerr << "pr command used with wrong number of arguments!" << std::endl;
+        }
+        else {
+            printStat();
+        }
+    }
     else{
         std::cerr << "Unknown command!" << std::endl;
-
+    }
+    if (returnCode != 0) {
+        std::cout << -1 << " ";
     }
 }
 
@@ -129,6 +144,7 @@ void ProcessResourceManager::init() {
 //    pcbs[0].printPCB();
     pcbNum = 1;
     rl.addToRL(Low, 0);
+    std::cout << std::endl;
     scheduler();
 //    rl.printRL();
 }
@@ -150,7 +166,7 @@ RC ProcessResourceManager::create(Priority priority) {
     pcbs[pid].setPriority(priority);
     rl.addToRL(priority, pid);
     pcbNum += 1;
-    std::cout << "process " << pid << " created" << std::endl;
+//    std::cout << "process " << pid << " created" << std::endl;
 //    pcbs[pid].printPCB();
 //    rl.printRL();
     scheduler();
@@ -169,7 +185,8 @@ PID ProcessResourceManager::getUnallocatedPCB() {
 void ProcessResourceManager::scheduler() {
     PID candidate = rl.peekTop();
     runningPID = candidate; // even if it returns -1
-    std::cout << "process " << runningPID << " running" << std::endl;
+    std::cout << runningPID << " ";
+//    std::cout << "process " << runningPID << " running" << std::endl;
 }
 
 RC ProcessResourceManager::request(RID rid, unsigned int units) {
@@ -183,15 +200,15 @@ RC ProcessResourceManager::request(RID rid, unsigned int units) {
     if (rcb.canHandle(units)) {
         rcb.allocateUnits(units);
         pcb.insertResource(rid, units);
-        std::cout << units << " of resource " << rid << " allocated" << std::endl;
+//        std::cout << units << " of resource " << rid << " allocated" << std::endl;
     }
     else {
         pcb.block();
         rl.removeFromRL(runningPID, pcb.getPriority());
 //        rl.printRL();
         rcb.addRequest(runningPID, units);
-        scheduler();
     }
+    scheduler();
 //    pcb = pcbs[runningPID];
 //    pcb.printPCB();
 //    rcb.printRCB();
@@ -201,51 +218,74 @@ RC ProcessResourceManager::request(RID rid, unsigned int units) {
 RC ProcessResourceManager::release(PID pid, RID rid, unsigned int units) {
     PCB& pcb = pcbs[pid];
     RCB& rcb = rcbs[rid];
-    if (!pcb.hasResource(rid)) {
+    if (!pcb.hasResource(rid, 0)) {
         std::cerr << "Error: releasing an resource that does not belong to the process!" << std::endl;
         return -1;
     }
     pcb.removeResource(rid);
     rcb.returnUnits(units);
-    pcb.printPCB();
-    rcb.printRCB();
-    rl.printRL();
+//    pcb.printPCB();
+//    rcb.printRCB();
+//    rl.printRL();
     while (!rcb.isWaitListEmpty() && rcb.canHandle(1)) {
         PRP prp = rcb.getNextRequest();
         PID waitingPID = prp.first;
         unsigned requestedUnits = prp.second;
         PCB& waitingPCB = pcbs[waitingPID];
         if (rcb.canHandle(requestedUnits)) {
-            rcb.allocateUnits(requestedUnits);
-            waitingPCB.insertResource(rid, requestedUnits);
-            waitingPCB.ready();
-            rcb.removeFromWaitList(waitingPID);
-            rl.addToRL(waitingPCB.getPriority(), waitingPID);
-            rl.printRL();
+            // make sure the request is valid
+            if (waitingPCB.isAllocated()) {
+                rcb.allocateUnits(requestedUnits);
+                waitingPCB.insertResource(rid, requestedUnits);
+                waitingPCB.ready();
+                rcb.removeFromWaitList(waitingPID);
+                rl.addToRL(waitingPCB.getPriority(), waitingPID);
+//                rl.printRL();
+            }
+            else {
+                rcb.removeFromWaitList(waitingPID);
+            }
         }
         else {
             break;
         }
     }
-    scheduler();
-    rcb.printRCB();
+//    rcb.printRCB();
     return 0;
 }
 
 RC ProcessResourceManager::destroy(PID pid) {
     PCB& pcb = pcbs[pid];
     PCB& parent = pcbs[pcb.getParent()];
-    for (auto& childPID: pcb.children) {
+    auto childrenCopy = pcb.children;
+    for (auto& childPID: childrenCopy) {
         destroy(childPID);
     }
     parent.deleteChild(pid);
-    rl.removeFromRL(pid, pcb.getPriority());
+    Priority priority = pcb.getPriority();
+//    rl.printRL();
+    if (rl.hasPID(pid, priority)) {
+        rl.removeFromRL(pid, priority);
+    }
     RID rid;
     unsigned units;
-    for (auto& pair: pcb.resources) {
+    auto resourceCopy = pcb.resources;
+    for (auto& pair: resourceCopy) {
+//        pcb.printPCB();
         rid = pair.first;
         units = pair.second;
+        pcb.unallocate();
         release(pid, rid, units);
+    }
+    // we should destroy all invalid requests from in all RCBs
+    for (auto & rcb : rcbs) {
+        auto waitListCopy = rcb.waitList;
+        for (const auto& pair: waitListCopy) {
+            PID requestPid = pair.first;
+            if (!pcbs[requestPid].isAllocated()) {
+                rcb.removeFromWaitList(requestPid);
+            }
+        }
     }
     pcbs[pid] = PCB();
     pcbNum -= 1;
@@ -255,6 +295,60 @@ RC ProcessResourceManager::destroy(PID pid) {
 void ProcessResourceManager::timeout() {
     rl.moveProcessToEnd(runningPID);
     scheduler();
+}
+
+void ProcessResourceManager::printStat() {
+    for (unsigned i = 0; i < PCB_COUNTS; ++i) {
+        std::cout << "PCB " << i << ":" << std::endl;
+        pcbs[i].printPCB();
+    }
+    for (unsigned i = 0; i < RCB_COUNTS; ++i) {
+        std::cout << "RCB " << i << ":" << std::endl;
+        rcbs[i].printRCB();
+    }
+    std::cout << "Ready List: " << std::endl;
+    rl.printRL();
+
+}
+
+RC ProcessResourceManager::release(RID rid, unsigned int units) {
+    PCB& pcb = pcbs[runningPID];
+    RCB& rcb = rcbs[rid];
+    if (!pcb.hasResource(rid, units)) {
+        std::cerr << "Error: releasing an resource that does not belong to the process!" << std::endl;
+        return -1;
+    }
+    pcb.removeResource(rid);
+    rcb.returnUnits(units);
+//    pcb.printPCB();
+//    rcb.printRCB();
+//    rl.printRL();
+    while (!rcb.isWaitListEmpty() && rcb.canHandle(1)) {
+        PRP prp = rcb.getNextRequest();
+        PID waitingPID = prp.first;
+        unsigned requestedUnits = prp.second;
+        PCB& waitingPCB = pcbs[waitingPID];
+        if (rcb.canHandle(requestedUnits)) {
+            // make sure the request is valid
+            if (waitingPCB.isAllocated()) {
+                rcb.allocateUnits(requestedUnits);
+                waitingPCB.insertResource(rid, requestedUnits);
+                waitingPCB.ready();
+                rcb.removeFromWaitList(waitingPID);
+                rl.addToRL(waitingPCB.getPriority(), waitingPID);
+//                rl.printRL();
+            }
+            else {
+                rcb.removeFromWaitList(waitingPID);
+            }
+        }
+        else {
+            break;
+        }
+    }
+    scheduler();
+//    rcb.printRCB();
+    return 0;
 }
 
 ProcessResourceManager::~ProcessResourceManager() = default;

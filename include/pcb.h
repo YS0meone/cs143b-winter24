@@ -34,8 +34,9 @@ public:
     RC deleteChild(PID pid);
     void insertResource(RID rid, unsigned units);
     void removeResource(RID rid);
-    void printPCB();
-    bool hasResource(RID rid);
+    void printPCB() const;
+    bool hasResource(RID rid, unsigned units);
+    void unallocate();
 private:
     PCBState _state;
     PID _parent;
