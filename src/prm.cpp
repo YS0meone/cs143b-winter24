@@ -5,20 +5,20 @@
 #include "../include/prm.h"
 
 
-ProcessResourceManager& ProcessResourceManager::instance() {
-    static ProcessResourceManager _prm_ = ProcessResourceManager();
+ProcessResourceManager& ProcessResourceManager::instance(bool isFileInput) {
+    static ProcessResourceManager _prm_ = ProcessResourceManager(isFileInput);
     return _prm_;
 }
 
-ProcessResourceManager::ProcessResourceManager()
-    : pcbNum(0), rl({}), pcbs{}, rcbs{}, runningPID(-1){
+ProcessResourceManager::ProcessResourceManager(bool isFileInput)
+    : pcbNum(0), rl({}), pcbs{}, rcbs{}, runningPID(-1), isFileInput(isFileInput){
     // initializer should initialize the PRMs and RL and RCBs and calls activateShell to allow for user interaction
     activateShell();
 }
 
 void ProcessResourceManager::activateShell() {
     while (true) {
-        std::cout << "> ";
+        if (!isFileInput) std::cout << "> ";
         std::string command;
         std::getline(std::cin, command);
         std::vector<std::string> args = parseCommand(command);
@@ -41,6 +41,9 @@ std::vector<std::string> ProcessResourceManager::parseCommand(const std::string 
 }
 
 void ProcessResourceManager::executeCommand(const std::vector<std::string> &args) {
+    if (args.empty()) {
+        return;
+    }
     const std::string& function = args[0];
     RC returnCode = 0;
     if (function == "cr") {
@@ -115,6 +118,9 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
     }
     if (returnCode != 0) {
         std::cout << -1 << " ";
+    }
+    if (!isFileInput) {
+        std::cout << std::endl;
     }
 }
 
@@ -193,10 +199,11 @@ RC ProcessResourceManager::request(RID rid, unsigned int units) {
     RCB& rcb = rcbs[rid];
     PCB& pcb = pcbs[runningPID];
     unsigned maxUnits = rcb.getInventory();
-    if (maxUnits < units) {
+    if (maxUnits < units + pcb.getUnits(rid)) {
         std::cerr << "Requested more than resource can possible have!" << std::endl;
         return -1;
     }
+    // check if the request is more than
     if (rcb.canHandle(units)) {
         rcb.allocateUnits(units);
         pcb.insertResource(rid, units);
@@ -218,11 +225,11 @@ RC ProcessResourceManager::request(RID rid, unsigned int units) {
 RC ProcessResourceManager::release(PID pid, RID rid, unsigned int units) {
     PCB& pcb = pcbs[pid];
     RCB& rcb = rcbs[rid];
-    if (!pcb.hasResource(rid, 0)) {
+    if (!pcb.hasResource(rid, units)) {
         std::cerr << "Error: releasing an resource that does not belong to the process!" << std::endl;
         return -1;
     }
-    pcb.removeResource(rid);
+    pcb.removeResource(rid, units);
     rcb.returnUnits(units);
 //    pcb.printPCB();
 //    rcb.printRCB();
@@ -318,7 +325,7 @@ RC ProcessResourceManager::release(RID rid, unsigned int units) {
         std::cerr << "Error: releasing an resource that does not belong to the process!" << std::endl;
         return -1;
     }
-    pcb.removeResource(rid);
+    pcb.removeResource(rid, units);
     rcb.returnUnits(units);
 //    pcb.printPCB();
 //    rcb.printRCB();

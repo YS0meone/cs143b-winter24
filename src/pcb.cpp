@@ -63,14 +63,28 @@ bool PCB::isAllocated() {
 }
 
 void PCB::insertResource(RID rid, unsigned int units) {
+    // first check if the pcb already has that rid resources
+    for (auto & resource : resources) {
+        if (resource.first == rid) {
+            resource.second += units;
+            return;
+        }
+    }
+    // if it does not have one we creat a new resource pair
     RUP rup(rid, units);
     resources.push_back(rup);
 }
 
-void PCB::removeResource(RID rid) {
+void PCB::removeResource(RID rid, unsigned units) {
+    // guaranteed to have at least that much of units
     for (auto it = resources.begin(); it != resources.end();) {
         if (it->first == rid) {
-            it = resources.erase(it);
+            if (it->second == units){
+                it = resources.erase(it);
+            }
+            else {
+                it->second -= units;
+            }
             return;
         }
         else {
@@ -93,6 +107,17 @@ bool PCB::hasResource(RID rid, unsigned units) {
 
 void PCB::unallocate() {
     _state = Unallocated;
+}
+
+unsigned PCB::getUnits(RID rid) {
+    RID ridHold;
+    for (const auto& pair: resources) {
+        ridHold = pair.first;
+        if (ridHold == rid) {
+            return pair.second;
+        }
+    }
+    return 0;
 }
 
 
