@@ -120,6 +120,12 @@ unsigned PCB::getUnits(RID rid) {
     return 0;
 }
 
+bool PCB::hasChild(PID pid) {
+    return std::any_of(children.begin(), children.end(), [pid](PID childPID) {
+        return childPID == pid;
+    });
+}
+
 
 
 

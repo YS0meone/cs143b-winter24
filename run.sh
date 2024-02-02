@@ -8,4 +8,4 @@ fi
 cd build || exit
 cmake ..
 cmake --build .
-./PRM fileInput < "$root"/input.txt > "$root"/output.txt
+./PRM "$root"/input.txt > "$root"/output.txt

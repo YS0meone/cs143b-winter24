@@ -13,6 +13,7 @@
 #include <iostream>
 #include <vector>
 #include <sstream>
+#include <fstream>
 
 #define PCB_COUNTS 16
 #define RCB_COUNTS 4
@@ -20,9 +21,9 @@
 // The only way to interact with the PRM should be done thru the shell thus all functions should be made private
 class ProcessResourceManager {
 public:
-    static ProcessResourceManager& instance(bool isFileInput=false);
+    static ProcessResourceManager& instance(const std::string& filePath="");
 protected:
-    explicit ProcessResourceManager(bool isFileInput=false);
+    explicit ProcessResourceManager(const std::string& filePath);
     ~ProcessResourceManager();
     ProcessResourceManager(const ProcessResourceManager& other);
     ProcessResourceManager& operator=(const ProcessResourceManager& other);
@@ -32,7 +33,7 @@ private:
     PCB pcbs[PCB_COUNTS];
     RCB rcbs[RCB_COUNTS];
     ReadyList rl;
-    bool isFileInput;
+    std::string filePath;
 
     void activateShell();
     std::vector<std::string> parseCommand(const std::string& command);

@@ -5,28 +5,43 @@
 #include "../include/prm.h"
 
 
-ProcessResourceManager& ProcessResourceManager::instance(bool isFileInput) {
-    static ProcessResourceManager _prm_ = ProcessResourceManager(isFileInput);
+ProcessResourceManager& ProcessResourceManager::instance(const std::string& filePath) {
+    static ProcessResourceManager _prm_ = ProcessResourceManager(filePath);
     return _prm_;
 }
 
-ProcessResourceManager::ProcessResourceManager(bool isFileInput)
-    : pcbNum(0), rl({}), pcbs{}, rcbs{}, runningPID(-1), isFileInput(isFileInput){
+ProcessResourceManager::ProcessResourceManager(const std::string& filePath)
+    : pcbNum(0), rl({}), pcbs{}, rcbs{}, runningPID(-1), filePath(filePath){
     // initializer should initialize the PRMs and RL and RCBs and calls activateShell to allow for user interaction
     activateShell();
 }
 
 void ProcessResourceManager::activateShell() {
-    while (true) {
-        if (!isFileInput) std::cout << "> ";
-        std::string command;
-        std::getline(std::cin, command);
-        std::vector<std::string> args = parseCommand(command);
-//        printVector(args);
-        if (command == "exit") {
-            break;
+    if (!filePath.empty()){
+        std::ifstream file(filePath);
+        if (!file.is_open()) {
+            std::cerr << "Unable to open file!" <<std::endl;
+            return;
         }
-        executeCommand(args);
+        std::string command;
+        while (std::getline(file,command)) {
+            std::vector<std::string> args = parseCommand(command);
+//        printVector(args);
+            executeCommand(args);
+        }
+    }
+    else {
+        while (true) {
+            std::cout << "> ";
+            std::string command;
+            std::getline(std::cin, command);
+            std::vector<std::string> args = parseCommand(command);
+            //        printVector(args);
+            if (command == "exit") {
+                break;
+            }
+            executeCommand(args);
+        }
     }
 }
 
@@ -72,8 +87,16 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
         }
         else {
             PID pid = std::stoi(args[1]);
-            returnCode = destroy(pid);
-            scheduler();
+            PCB& pcb = pcbs[runningPID];
+            if (pid != runningPID && !pcb.hasChild(pid)) {
+                std::cerr << "Destroying the process that is not itself or its child!" << std::endl;
+                returnCode = -1;
+            }
+            else{
+                returnCode = destroy(pid);
+                scheduler();
+            }
+
         }
     }
     else if(function == "rq") {
@@ -119,7 +142,7 @@ void ProcessResourceManager::executeCommand(const std::vector<std::string> &args
     if (returnCode != 0) {
         std::cout << -1 << " ";
     }
-    if (!isFileInput) {
+    if (filePath.empty()) {
         std::cout << std::endl;
     }
 }
@@ -196,6 +219,10 @@ void ProcessResourceManager::scheduler() {
 }
 
 RC ProcessResourceManager::request(RID rid, unsigned int units) {
+    if (rid < 0 || rid >= 4) {
+        std::cerr << "Requested rid does not exist!" << std::endl;
+        return -1;
+    }
     RCB& rcb = rcbs[rid];
     PCB& pcb = pcbs[runningPID];
     unsigned maxUnits = rcb.getInventory();

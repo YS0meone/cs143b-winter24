@@ -29,6 +29,7 @@ public:
     Priority getPriority();
     void ready();
     void block();
+    bool hasChild(PID pid);
     bool isAllocated();
     void addChild(PID pid);
     RC deleteChild(PID pid);

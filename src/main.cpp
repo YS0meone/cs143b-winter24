@@ -6,11 +6,11 @@
 // RCB class should have getter and setter function for _state and waitlist
 
 int main(int argc, char* argv[]){
-    bool isFileInput = false;
+    std::string filePath;
     if (argc == 2) {
-        isFileInput = (strcmp("fileInput", argv[1]) == 0);
+        filePath = std::string(argv[1]);
     }
-    ProcessResourceManager& prm = ProcessResourceManager::instance(isFileInput);
+    ProcessResourceManager& prm = ProcessResourceManager::instance(filePath);
 
 //    PCB pcb = PCB();
 //    std::cout << pcb.getPriority() << std::endl;
